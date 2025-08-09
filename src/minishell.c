@@ -1,3 +1,14 @@
+/* ************************************************************************** */
+/* */
+/* :::      ::::::::   */
+/* minishell.c                                        :+:      :+:    :+:   */
+/* +:+ +:+         +:+     */
+/* By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
+/* +#+#+#+#+#+   +#+           */
+/* Created: 2025/08/05 19:41:24 by daflynn           #+#    #+#             */
+/* Updated: 2025/08/09 17:30:00 by daflynn          ###   ########.fr       */
+/* */
+/* ************************************************************************** */
 
 #include "minishell.h"
 
@@ -6,19 +17,22 @@
 extern volatile sig_atomic_t	g_signal_status;
 
 /**
- * @brief Sets up signal handlers for the main shell loop.
- *
- * It configures SIGINT (Ctrl-C) to be handled by a custom function
- * that sets the global status. SIGQUIT (Ctrl-\) is ignored.
- * `rl_catch_signals(0)` disables readline's default signal handlers.
+ * @brief Frees memory allocated for a single loop iteration.
+ * This is crucial to prevent memory leaks as the shell runs.
+ * @param data The main data structure.
  */
+void	ft_cleanup_loop(t_dat *data)
+{
+	// Free the token array from the previous command
+	if (data->ln)
+		ft_free_string_array(data->ln);
+	if (data->xln)
+		ft_free_string_array(data->xln);
+	// Reset pointers to prevent double-free errors
+	data->ln = NULL;
+	data->xln = NULL;
+}
 
-/**
- * @brief The main function of the minishell.
- *
- * It initializes data structures, enters a read-evaluate-print loop,
- * and handles user input until the program is exited.
- */
 int	main(int argc, char **argv, char **env)
 {
 	t_dat	data;
@@ -40,9 +54,13 @@ int	main(int argc, char **argv, char **env)
 		if (ft_strlen(line) > 0)
 		{
 			add_history(line);
-			ft_external_functions(&data, line);
+			// This is the correct, existing function from your expansion.c
+			// It will tokenize, expand, and then route the command for you.
+			ft_check_var_assign_and_expand_line(&data, line);
 		}
 		free(line);
+		// Always clean up after each loop to avoid memory leaks.
+		ft_cleanup_loop(&data);
 	}
 	ft_cleanup_exit(&data, 0);
 	return (data.last_exit_status);
@@ -59,7 +77,6 @@ char	*ft_join_path(char *str1, char *cmd)
 	temp = NULL;
 	return (full_path);
 }
-
 int	ft_count_pipes(char **tokens)
 {
 	int	count;
@@ -87,29 +104,4 @@ void	ft_cmd_not_found(char *cmd)
 	write(2, cmd, ft_strlen(cmd));
 	write(2, suffix, ft_strlen(suffix));
 	exit(127);
-}
-
-void	ft_external_functions(t_dat *data, char *line)
-{
-	char	***cmd;
-	int		n;
-
-	(void)line;
-	if (!data || !data->xln || !data->xln[0])
-		return ;
-	if (!ft_validate_syntax(data->xln))
-		return ;
-	ft_list_to_env_array(data);
-	n = ft_count_pipes(data->xln);
-	if (n > 0)
-	{
-		cmd = ft_parse_cmd(data, 0, 0, 0);
-		if (!cmd)
-			return ;
-		ft_execute_pipeline(data, cmd);
-		ft_clean_cmd(cmd);
-	}
-	else
-		ft_ex_single_cmd(data, NULL);
-	ft_free_string_array(data->evs);
 }

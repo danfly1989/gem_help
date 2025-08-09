@@ -172,7 +172,6 @@ char							*ft_get_cmd_path(t_dat *d, const char *cmd,
 int								ft_count_pipes(char **tokens);
 void							ft_cmd_not_found(char *cmd);
 void							ft_ex_single_cmd(t_dat *d, char *cmd_path);
-void							ft_external_functions(t_dat *data, char *line);
 char							**ft_extract_tokens(t_dat *data, int start,
 									int end);
 char							***ft_clean_cmd(char ***cmd);

@@ -152,6 +152,6 @@ int	ft_handle_builtin(t_dat *data, char *line, size_t k)
 	else if (ft_strcmp(data->xln[k], "export") == 0)
 		ft_export_multi_var(data, k);
 	else
-		ft_external_functions(data, line);
+		return (0);
 	return (0); // Tell the main loop to continue
 }

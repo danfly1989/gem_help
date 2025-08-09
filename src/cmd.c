@@ -1,13 +1,13 @@
 /* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   cmd.c                                              :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/08/05 19:41:24 by daflynn           #+#    #+#             */
-/*   Updated: 2025/08/05 19:41:34 by daflynn          ###   ########.fr       */
-/*                                                                            */
+/* */
+/* :::      ::::::::   */
+/* cmd.c                                              :+:      :+:    :+:   */
+/* +:+ +:+         +:+     */
+/* By: daflynn <daflynn@student.42berlin.de>      +#+  +:+       +#+        */
+/* +#+#+#+#+#+   +#+           */
+/* Created: 2025/08/05 19:41:24 by daflynn           #+#    #+#             */
+/* Updated: 2025/08/05 19:41:34 by daflynn          ###   ########.fr       */
+/* */
 /* ************************************************************************** */
 
 #include "minishell.h"
@@ -56,16 +56,23 @@ void	ft_exec_command(t_dat *d, char **cmd)
 	exit(1);
 }
 
+/**
+ * @brief Executes a single command, now always by forking a new process.
+ *
+ * @return 1 if the shell should exit, 0 otherwise.
+ */
 void	ft_ex_single_cmd(t_dat *d, char *cmd_path)
 {
 	pid_t	pid;
 	t_rdr	r;
+	int		status;
 
-	int status; // NEW: Declare status variable
+	// This line silences the "unused parameter" warning.
+	(void)cmd_path;
+	// The old `ft_is_builtin` check is gone. We now proceed directly with forking.
 	ft_parse_redirection(d->xln, &r);
 	if (!ft_apply_sing_redirections(&r, d->xln))
 	{
-		// This should set the exit status to a failure code
 		d->last_exit_status = 1;
 		return ;
 	}
@@ -73,15 +80,10 @@ void	ft_ex_single_cmd(t_dat *d, char *cmd_path)
 	if (pid == 0)
 	{
 		ft_set_default_signals();
-		cmd_path = ft_get_cmd_path(d, d->xln[0], 0);
-		if (!cmd_path)
-			ft_cmd_not_found(d->xln[0]);
-		execve(cmd_path, d->xln, d->evs);
-		exit(1);
+		ft_exec_command(d, d->xln);
 	}
 	else if (pid > 0)
 	{
-		// NEW: Capture the exit status
 		waitpid(pid, &status, 0);
 		if (WIFEXITED(status))
 			d->last_exit_status = WEXITSTATUS(status);
@@ -90,6 +92,7 @@ void	ft_ex_single_cmd(t_dat *d, char *cmd_path)
 	}
 	else
 		perror("fork");
+	return ;
 }
 
 int	ft_parse_cmd_helper(t_dat *d, char ***cmd, int *idx, int *st_i)
