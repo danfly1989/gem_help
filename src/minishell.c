@@ -203,20 +203,25 @@ void	ft_exec_cmd_with_fork(t_dat *data, char **xln)
 	ft_free_string_array(env_array);
 	free(path_to_cmd);
 }
-
 int	main(int argc, char **argv, char **env)
 {
 	t_dat	data;
 	char	*line;
-	int		i;
 
 	data = ft_duplicate_input_args(argc, argv, env);
 	ft_update_shlvl(&data.ev);
-	rl_event_hook = ft_handle_signal_in_readline;
 	while (1)
 	{
 		ft_set_main_signals();
 		line = readline("dandav>");
+		// This is the new, crucial check.
+		if (g_signal_status == 130)
+		{
+			// Print a single newline and reset the flag.
+			write(1, "\n", 1);
+			g_signal_status = 0;
+			continue ; // Skip the rest of the loop and start over
+		}
 		if (!line)
 		{
 			printf("exit\n");
@@ -226,24 +231,6 @@ int	main(int argc, char **argv, char **env)
 		{
 			add_history(line);
 			ft_check_var_assign_and_expand_line(&data, line);
-			// NEW DEBUGGING CODE
-			printf("DEBUG: After expanding the line.\n");
-			if (data.xln)
-			{
-				printf("DEBUG: Expanded command tokens (xln):\n");
-				i = 0;
-				while (data.xln[i])
-				{
-					printf("DEBUG: xln[%d] = \"%s\"\n", i, data.xln[i]);
-					i++;
-				}
-			}
-			else
-			{
-				printf("DEBUG: xln is NULL. No command to execute.\n");
-			}
-			// END NEW DEBUGGING CODE
-			// Existing call to ft_exec_cmd_with_fork - check if it's there
 			if (data.xln && data.xln[0])
 			{
 				ft_exec_cmd_with_fork(&data, data.xln);
